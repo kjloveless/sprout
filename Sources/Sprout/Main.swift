@@ -13,7 +13,7 @@ func run() throws {
     let group = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     defer { try? group.syncShutdownGracefully() }
 
-    let router = Router()
+    let router = Router(assets: try Assets.load())
 
     let bootstrap = ServerBootstrap(group: group)
         .serverChannelOption(ChannelOptions.backlog, value: 128)

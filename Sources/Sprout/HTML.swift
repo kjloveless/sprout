@@ -3,6 +3,20 @@ import Foundation
 indirect enum HTMLNode {
     case text(String)
     case element(String, [String: String], [HTMLNode])
+    case island(name: String, props: String, children: [HTMLNode])
+
+    var hasIsland: Bool {
+        switch self {
+        case .text:
+            return false
+
+        case .element(_, _, let children):
+            return children.contains { $0.hasIsland }
+
+        case .island:
+            return true
+        }
+    }
 }
 
 func escapeHTML(_ value: String) -> String {
@@ -25,15 +39,30 @@ func render(_ node: HTMLNode) -> String {
         }.joined()
         let content = children.map(render).joined()
         return "<\(name)\(attrs)>\(content)</\(name)>"
+
+    case .island(let name, let props, let children):
+        return render(.element("div", [
+            "data-island": name,
+            "data-props": props
+        ], children))
     }
 }
 
 func page(title: String, content: HTMLNode) -> String {
+    var bodyChildren: [HTMLNode] = [content]
+
+    if content.hasIsland {
+        bodyChildren.append(.element("script", [
+            "type": "module",
+            "src": "/assets/runtime.js"
+        ], []))
+    }
+
     let document = HTMLNode.element("html", ["lang": "en"], [
         .element("head", [:], [
             .element("title", [:], [.text(title)])
         ]),
-        .element("body", [:], [content])
+        .element("body", [:], bodyChildren)
     ])
     return "<!doctype html>" + render(document)
 }

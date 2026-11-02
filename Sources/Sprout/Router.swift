@@ -3,62 +3,51 @@ import NIOHTTP1
 
 struct Router {
     let assets: Assets
+    private let routes: [Route]
+
+    init(assets: Assets) {
+        self.assets = assets
+        self.routes = generatedRoutes()
+    }
 
     func handle(_ request: HTTPRequestHead) -> Reply {
         guard request.method == .GET else {
             return .text("method not allowed\n", status: .methodNotAllowed)
         }
-
-        let path = request.uri.split(
-            separator: "?", maxSplits: 1
-        ).first.map(String.init) ?? "/"
-
-        if path.hasPrefix("/hello/") {
-            let rawName = String(path.dropFirst("/hello/".count))
-            guard !rawName.isEmpty,
-                let name = rawName.removingPercentEncoding,
-                !name.contains("/") else {
-                    return .text("bad request\n", status: .badRequest)
-                }
-
-                let content = HTMLNode.element("h1", [:], [
-                    .text("hello, \(name)!")
-                ])
-                return .html(page(title: "greetings", content: content))
+        guard let path = Self.decodePath(request.uri) else {
+            return .text("bad request\n", status: .badRequest)
         }
-
-        switch path {
-        case "/":
-            guard let counter = try? makeCounter(initial: 3) else {
-                return .text("could not render\n", status: .internalServerError)
-            }
-            let content = HTMLNode.element("main", [:], [
-                .element("h1", [:], [.text("our first island")]),
-                .element("p", [:], [.text("the rest of this page is static.")]),
-                counter,
-                counter,
-                .element("a", ["href": "/about"], [.text("about")])
-            ])
-            return .html(page(title: "home", content: content))
-
-        case "/about":
-            let content = HTMLNode.element("main", [:], [
-                .element("h1", [:], [.text("about sprout")]),
-                .element("a", ["href": "/"], [.text("home")])
-            ])
-            return .html(page(title: "about", content: content))
-
-        case "/health":
-            return .text("ok")
-
-        case "/assets/runtime.js":
+        if path == ["assets", "runtime.js"] {
             return .javascript(assets.runtime)
-
-        case "/assets/counter.js":
-            return .javascript(assets.counter)
-
-        default:
-            return .text("not found\n", status: .notFound)
         }
+        if path == ["assets", "counter.js"] {
+            return .javascript(assets.counter)
+        }
+
+        for route in routes {
+            if let parameters = route.match(path) {
+                let context = PageContext(parameters: parameters, assets: assets)
+                return route.handler(context)
+            }
+        }
+
+        return .text("not found\n", status: .notFound)
+    }
+
+    static func decodePath(_ target: String) -> [String]? {
+        let encoded = target.split(
+            separator: "?", maxSplits: 1, omittingEmptySubsequences: false
+        ).first.map(String.init) ?? ""
+        guard encoded.hasPrefix("/") else { return nil }
+
+        var components: [String] = []
+        for raw in encoded.split(separator: "/") {
+            guard let part = String(raw).removingPercentEncoding,
+                !part.isEmpty, !part.contains("/"), !part.contains("\\"),
+                part != ".", part != ".." else { return nil }
+            components.append(part)
+        }
+
+        return components
     }
 }

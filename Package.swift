@@ -20,5 +20,12 @@ let package = Package(
             ],
             resources: [.copy("Public")]
         ),
+        .testTarget(
+            name: "SproutTests",
+            dependencies: [
+                "Sprout",
+                .product(name: "NIOHTTP1", package: "swift-nio"),
+            ]
+        ),
     ]
 )

@@ -1,3 +1,4 @@
+import Foundation
 import NIOHTTP1
 
 struct Router {
@@ -12,10 +13,19 @@ struct Router {
 
         switch path {
         case "/":
-            return .text("this is the home page.\n")
+            let content = HTMLNode.element("main", [:], [
+                .element("h1", [:], [.text("hello, swiftnio!")]),
+                .element("p", [:], [.text("we made a page in swift.")]),
+                .element("a", ["href": "/about"], [.text("about")])
+            ])
+            return .html(page(title: "home", content: content))
 
         case "/about":
-            return .text("this is the about page.\n")
+            let content = HTMLNode.element("main", [:], [
+                .element("h1", [:], [.text("about sprout")]),
+                .element("a", ["href": "/"], [.text("home")])
+            ])
+            return .html(page(title: "about", content: content))
 
         case "/health":
             return .text("ok")

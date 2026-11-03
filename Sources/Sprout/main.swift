@@ -35,9 +35,4 @@ func run() throws {
     try channel.closeFuture.wait()
 }
 
-@main
-enum Sprout {
-    static func main() throws {
-        try run()
-    }
-}
+try run()

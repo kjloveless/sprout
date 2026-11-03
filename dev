@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")"
+swift scripts/generate-routes.swift
+exec swift run Sprout

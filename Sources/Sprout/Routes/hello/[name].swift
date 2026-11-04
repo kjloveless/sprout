@@ -7,6 +7,6 @@ struct HelloNameRoute {
             .text("hello, \(name)!")
         ])
 
-        return .html(page(title: "greetings", content: content))
+        return context.html(title: "greetings", content: content)
     }
 }

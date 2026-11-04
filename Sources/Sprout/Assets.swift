@@ -7,6 +7,14 @@ struct MissingAsset: Error {
 struct Assets {
     let runtime: String
     let counter: String
+    let staticFiles: [String: StaticAsset]
+
+    init(runtime: String, counter: String,
+        staticFiles: [String: StaticAsset] = [:]) {
+        self.runtime = runtime
+        self.counter = counter
+        self.staticFiles = staticFiles
+    }
 
     static func load() throws -> Assets {
         func loadJS(_ name: String) throws -> String {
@@ -21,9 +29,14 @@ struct Assets {
             return try String(contentsOf: url, encoding: .utf8)
         }
 
-        return Assets(
-            runtime: try loadJS("runtime"), 
-            counter: try loadJS("counter")
+        let staticRoot = URL(
+            fileURLWithPath: FileManager.default.currentDirectoryPath,
+            isDirectory: true
+        ).appendingPathComponent("static", isDirectory: true)
+
+        return try Assets(
+            runtime: loadJS("runtime"), counter: loadJS("counter"),
+            staticFiles: StaticFiles.load(from: staticRoot)
         )
     }
 }

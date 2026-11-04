@@ -6,6 +6,6 @@ struct AboutRoute {
             element("a", attributes: ["href": "/"]) { "home" }
         }
 
-        return .html(page(title: "about", content: content))
+        return context.html(title: "about", content: content)
     }
 }

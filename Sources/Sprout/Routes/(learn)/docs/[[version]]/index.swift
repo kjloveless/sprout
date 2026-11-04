@@ -1,0 +1,9 @@
+struct GroupLearnDocsOptionalVersionIndexRoute {
+    static func render(_ context: PageContext) -> Reply {
+        let version = context.parameters["version"] ?? "latest"
+        let content = element("main") {
+            element("h1") { "documentation: \(version)" }
+        }
+        return context.html(title: "docs", content: content)
+    }
+}

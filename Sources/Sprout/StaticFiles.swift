@@ -22,6 +22,11 @@ enum StaticFiles {
         guard isDirectory.boolValue, rootValues.isSymbolicLink != true else {
             throw StaticFileError.invalidDirectory
         }
+        let rootComponents = root
+            .resolvingSymlinksInPath()
+            .standardizedFileURL
+            .pathComponents
+
         let keys: [URLResourceKey] = [
             .isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey
         ]
@@ -52,10 +57,23 @@ enum StaticFiles {
                 throw StaticFileError.tooLarge
             }
             total += bytes.count
-            let relative = url.pathComponents.dropFirst(root.pathComponents.count)
+            let fileComponents = url
+                .resolvingSymlinksInPath()
+                .standardizedFileURL
+                .pathComponents
+
+            guard fileComponents.starts(with: rootComponents),
+                fileComponents.count > rootComponents.count else {
+                    throw StaticFileError.invalidDirectory
+            }
+
+            let relative = fileComponents
+                .dropFirst(rootComponents.count)
                 .joined(separator: "/")
+
             assets[relative] = StaticAsset(
-                bytes: bytes, contentType: contentType(for: url.pathExtension)
+                bytes: bytes, 
+                contentType: contentType(for: url.pathExtension)
             )
         }
         if let enumerationError { throw enumerationError }
